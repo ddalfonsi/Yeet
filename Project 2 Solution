@@ -1,0 +1,280 @@
+#include <string>
+using std::string;
+
+#include <sstream>
+using std::istringstream;
+
+#include <vector>
+using std::vector;
+
+#include <algorithm>
+using std::reverse;
+
+#include <iterator>
+using std::begin;
+using std::end;
+
+#include "bio.h"
+
+/*This functions input is a reference to a constant string. The for loop goes through
+each character of the input and checks to see if the char is a valid letter in a dna
+sequence. If there is one letter that isn't allowed in a dna sequence, the function
+returns false. If not, the function returns true. */
+bool IsValidDNASequence(const string & input_dna){
+  for (auto& x:input_dna){
+    if ((x == 'A') || (x == 'T') || (x == 'C') || (x == 'G')) { 
+      continue;
+    } else {
+      return false;
+    }
+  }
+  return true;
+}
+
+/*This function takes an input of a reference to a constant string and a pointer to
+an empty string. The function returns void, so we need to fill the empty string. The
+needed variables are initialized, and a for loop is run to reverse a copy of the
+string that was inputted. Then, the reverse sequence is iterated through, where each
+character has a corresponding char that is added to the pointer to the  empty strin
+g-which is the reverse complement sequence. nothing is outputted, but the initially
+empty string is not empty anymore. */
+void GetReverseComplementSequence(const string & input_sequence, string * const output){
+  string reverse_sequence = "";
+  int length = static_cast<int>(input_sequence.size())-1;
+  for(int i = length; i >= 0; --i) {
+    reverse_sequence += input_sequence[i];
+  }
+  for (auto x: reverse_sequence){
+    if (x == 'A') {
+      x = 'T';
+    } else if (x == 'T'){
+      x = 'A';
+    } else if (x == 'C'){
+      x = 'G';
+    } else if (x == 'G'){
+      x = 'C';
+    }
+    *output += x;
+  }
+}
+
+/*This function takes the rna input of a reference to a constant string and outputs a
+string containing the RNA transcript. There's a constant pointer to a string that
+derefences the input. The function for the reverse compliment sequence is run, and
+the length of the rna transcript is defined. A for loop is run that iterates through
+each char in the rna transcript, and if a T was foud it was converted to a U. The
+function then returns the modified rna trasncript.*/
+string GetRNATranscript(const string & input_for_rna) {
+  string x = "";
+  string* const y = &x;
+  GetReverseComplementSequence(input_for_rna, y);
+  string rna_transcript = *y;
+  int len = static_cast<int>(rna_transcript.size());
+  for (int i=0; i < len; ++i){
+    if (rna_transcript[i] == 'T'){
+      rna_transcript[i] = 'U';
+    }
+  }
+  return rna_transcript;
+}
+
+/*This function is a custom function that adds a partial codon to a vector that contains strings. a counter is initialized, and so is a temporary string. The input is iterated through, and three of the chars are added to the temporary string. The temporary string is then added to the vector containing other strings, and then emptied. The iterator goes through the entire input, but if the codon isn't three letters, it doesnt get added to the vector containing strings. The vector of strings is then returned. The it determines where the iteration is started. */
+vector<string> AddingToCodonList (vector<string> p_o_c_l, string r_t, int it){
+  int counter = 1;
+  string partial_codon = "";
+    for(int i=it; i < static_cast<int>(r_t.size()); ++i){
+      if (counter % 3) {
+        partial_codon += r_t[i];
+        ++counter;
+      } else {
+        partial_codon += r_t[i];
+        counter = 1;
+        p_o_c_l.push_back(partial_codon);
+        partial_codon = "";
+      }
+  }
+  return p_o_c_l;
+}
+
+/* This function is a function that takes in a reference to a constant string and
+outputs a string containing the reversed, converted sequence. The variables are first
+defined, and the input is iterated through backwards, where the corresponding
+character is added to an initially empty string. This results in a backwards input.
+Then, the reversed input is iterated through again, but each letter is changed to its
+corresponding nucleotide and added to an output string. This output string is
+outputted. */
+string Reverse(const string & input_sequence){
+  string output = "";
+  string reverse_sequence = "";
+  int length = static_cast<int>(input_sequence.size())-1;
+  for(int i = length; i >= 0; --i) {
+    reverse_sequence += input_sequence[i];
+  }
+  for (auto x: reverse_sequence){
+    if (x == 'A') {
+      x = 'U';
+    } else if (x == 'U'){
+      x = 'A';
+    } else if (x == 'C'){
+      x = 'G';
+    } else if (x == 'G'){
+      x = 'C';
+    }
+    output += x;
+  }
+  return output;
+}
+
+/* This function should return a vector of vector of strings with each possible RNA
+reading frame from the given DNA sequence. Each needed variable is defined, and the
+corresponding outside functions are run. An iteration counter is put into place, and
+a while loop is run. In this while loop, a small part of teh codon list is defined to
+the previous function, and then added to the main vector. After three iterations, the
+input is reversed, and run through a similar code as the previous. after this
+iteration, the full codon list is returned as a vector containing vectors that
+contains lists. */
+vector<vector<string>> GetReadingFramesAsCodons(const string & input){
+  string rna_transcript = GetRNATranscript(input);
+  vector<string> part_of_codon_list;
+  vector<vector<string>> full_codon_list;
+  int iteration = 0;
+  while (iteration < 3){
+    part_of_codon_list = AddingToCodonList (part_of_codon_list, rna_transcript, iteration);
+    full_codon_list.push_back (part_of_codon_list);
+    part_of_codon_list.clear();
+    ++iteration;
+  }
+  part_of_codon_list.clear();
+  iteration = 0;
+  string r_input = Reverse(rna_transcript);
+  while (iteration < 3){
+    part_of_codon_list = AddingToCodonList (part_of_codon_list, r_input, iteration);
+      full_codon_list.push_back (part_of_codon_list);
+      part_of_codon_list.clear();
+      ++iteration;
+  }
+  return full_codon_list;
+}
+
+/*This function converts codons into a string of amino acids using genetic code. The
+needed variables are defined, then the vector table of amino acids and their
+corresponding name is created. An interator goes through each string of the inputted
+vector, and runs anotehr iterator to comb through each amino acid. Once the
+corresponding is found, the first letter of the name of that amino acid is added to
+an empty string, and then the iterator goes to the next letter. Once the iterator is
+completed, the string containing the strand is returned.*/
+string Translate(const vector<string> & codon_sequence) {
+  string translated = "";
+  vector<vector<string>> acid{
+  {"GCU", "GCC", "GCA", "GCG"},//a
+  {"CGU", "CGC", "CGA", "CGG", "AGA", "AGG"},//r
+  {"AAU", "AAC"},//n
+  {"GAU", "GAC"},//d
+  {"UGU", "UGC"},//c
+  {"CAA", "CAG"},//q
+  {"GAA", "GAG"},//e
+  {"GGU", "GGC", "GGA", "GGG"},//g
+  {"CAU", "CAC"},//h
+  {"AUU", "AUC", "AUA"},//i
+  {"UUA", "UUG", "CUU", "CUC", "CUA", "CUG"},//l
+  {"AAA", "AAG"},//k
+  {"AUG"},//m
+  {"UUU", "UUC"},//f
+  {"CCU", "CCC", "CCA", "CCG"},//p
+  {"UCU", "UCC", "UCA", "UCG", "AGU", "AGC"},//s
+  {"ACU", "ACC", "ACA", "ACG"},//t
+  {"UGG"},//w
+  {"UAU", "UAC"},//y
+  {"GUU", "GUC", "GUA", "GUG"},//v
+  {"UAG", "UGA", "UAA"}//stop
+  };
+  for (auto x:codon_sequence){
+    for (int row = 0; row < static_cast<int>(acid.size()); ++row)
+      for (int col = 0; col < static_cast<int>(acid[row].size()); ++col){
+        if (x == acid[row][col]){
+          if (row == 0)
+            translated += 'A';
+          else if (row == 1)
+            translated += 'R';
+          else if (row == 2)
+            translated += 'N';
+          else if (row == 3)
+            translated += 'D';
+          else if (row == 4)
+            translated += 'C';
+          else if (row == 5)
+            translated += 'Q';
+          else if (row == 6)
+            translated += 'E';
+          else if (row == 7)
+            translated += 'G';
+          else if (row == 8)
+            translated += 'H';
+          else if (row == 9)
+            translated += 'I';
+          else if (row == 10)
+            translated += 'L';
+          else if (row == 11)
+            translated += 'K';
+          else if (row == 12)
+            translated += 'M';
+          else if (row == 13)
+            translated += 'F';
+          else if (row == 14)
+            translated += 'P';
+          else if (row == 15)
+            translated += 'S';
+          else if (row == 16)
+            translated += 'T';
+          else if (row == 17)
+            translated += 'W';
+          else if (row == 18)
+            translated += 'Y';
+          else if (row == 19)
+            translated += 'V';
+          else if (row == 20)
+            translated += '*';
+        }
+      }
+  }
+  return translated;
+}
+/*This string looks for the longest possible amino acid sequence. M means start, and
+* means finist. The initial DNA sequence is inputted and corresponding variables are
+created. The string is converted using past defined functions, and each amino acid
+strand is iterated through individually. In each iteration, the letters are checked
+for an M, meaning its the beginning. The M is added to the empty string and so is
+everything else that isnt the stop character. once the stop character is found, its
+added to the challenging_aa_sequence, and compared to the longest_aa_sequence string.
+If the challenging_aa_sequence is longer than the longest_aa_sequence,
+longest_aa_sequence is redefined to be challenging_aa_sequence.
+challenging_aa_sequence is cleared, and the next amino acid strand is run. Once each
+char is run through, the longest_aa_sequence is returned. */
+string GetLongestOpenReadingFrame(const string & DNA_sequence){
+  string longest_aa_sequence = "";
+  string challenging_aa_sequence = "";
+  string aa_sequence;
+  for (vector<string> frame : GetReadingFramesAsCodons(DNA_sequence)) {
+    aa_sequence =  Translate(frame);
+    for (auto x:aa_sequence){
+      if (x == 'M'){
+      if (challenging_aa_sequence.length() > longest_aa_sequence.length()){
+        longest_aa_sequence = challenging_aa_sequence;
+      }
+        challenging_aa_sequence += x;
+      } else if (challenging_aa_sequence.length() != 0) {
+        if (x == '*') {
+          challenging_aa_sequence += x;
+          if (challenging_aa_sequence.length() > longest_aa_sequence.length())
+          longest_aa_sequence = challenging_aa_sequence;
+          challenging_aa_sequence = "";
+        } else {
+          challenging_aa_sequence += x;
+        }
+      }
+    }
+  aa_sequence = "";
+  challenging_aa_sequence = "";
+  }
+  return longest_aa_sequence;
+}
